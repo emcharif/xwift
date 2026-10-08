@@ -56,6 +56,3 @@ pub async fn run(devices: Vec<FoundDevice>, mut workout: Option<Workout>) -> Res
     println!("\nAll devices disconnected.");
     Ok(())
 }
-    println!("\nAll devices disconnected.");
-    Ok(())
-}
