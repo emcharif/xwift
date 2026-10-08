@@ -2,6 +2,7 @@ pub mod bike_data;
 pub mod byte_reader;
 pub mod heart_rate;
 pub mod snapshot;
+pub mod speed;
 
 use bike_data::BikeData;
 

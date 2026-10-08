@@ -1,17 +1,17 @@
 use anyhow::Result;
 use tokio::sync::{mpsc, watch};
 
+use super::export::{self, Sample};
 use super::pretty_print;
 use crate::bluetooth::control::TrainerCommand;
 use crate::bluetooth::device::{DeviceKind, FoundDevice};
 use crate::bluetooth::stream::stream_device;
-use crate::models::snapshot::Snapshot;
 use crate::models::Reading;
+use crate::models::snapshot::Snapshot;
 use crate::workout::model::Workout;
 use crate::workout::runner::{self, WorkoutStatus};
-use std::time::Duration;
 use chrono::Utc;
-use super::export::{self, Sample};
+use std::time::Duration;
 
 /// Start one streaming task per device, fold their readings into a Snapshot,
 /// and redraw after every update. Returns when all devices disconnect.
@@ -19,7 +19,10 @@ pub async fn run(devices: Vec<FoundDevice>, mut workout: Option<Workout>) -> Res
     let (tx, mut rx) = mpsc::channel(64);
     let mut pending: Option<(Workout, mpsc::Sender<TrainerCommand>)> = None;
     let (status_tx, status_rx) = watch::channel::<Option<WorkoutStatus>>(None);
-    let ride_name = workout.as_ref().map(|w| w.name.clone()).unwrap_or_else(|| "Free ride".into());
+    let ride_name = workout
+        .as_ref()
+        .map(|w| w.name.clone())
+        .unwrap_or_else(|| "Free ride".into());
 
     for device in devices {
         let tx = tx.clone();
@@ -45,7 +48,7 @@ pub async fn run(devices: Vec<FoundDevice>, mut workout: Option<Workout>) -> Res
     }
     drop(tx); // so rx closes once every device task ends
 
-        let mut snapshot = Snapshot::default();
+    let mut snapshot = Snapshot::default();
     let mut samples: Vec<Sample> = Vec::new();
     let start = Utc::now();
     let mut ticker = tokio::time::interval(Duration::from_secs(1));
@@ -73,7 +76,7 @@ pub async fn run(devices: Vec<FoundDevice>, mut workout: Option<Workout>) -> Res
                     power_w: b.and_then(|b| b.power_w).map(|v| v as i32),
                     cadence_rpm: b.and_then(|b| b.cadence_rpm).map(|v| (v as f64).round() as u32),
                     hr_bpm: snapshot.heart_rate.or(b.and_then(|b| b.heart_rate_bpm.map(u16::from))),
-                    speed_kmh: b.and_then(|b| b.speed_kmh).map(|v| v as f64),
+                    speed_kmh: snapshot.virtual_speed_kmh().map(|v| v as f64),
                 });
                 if status_rx.borrow().as_ref().is_some_and(|s| s.finished) {
                     break; // workout done, even if the HR strap is still connected

@@ -14,7 +14,7 @@ const POWER_BAR_MAX_W: f32 = 400.0;
 pub fn render(s: &Snapshot, workout: Option<&WorkoutStatus>) {
     let bike = s.bike.as_ref();
 
-    let speed = fmt(bike.and_then(|b| b.speed_kmh), |v| format!("{v:5.1}"));
+    let speed = fmt(s.virtual_speed_kmh(), |v| format!("{v:5.1}"));
     let cadence = fmt(bike.and_then(|b| b.cadence_rpm), |v| format!("{v:3.0}"));
     let power_w = bike.and_then(|b| b.power_w);
     let power = fmt(power_w, |v| format!("{v:4}"));
@@ -22,10 +22,13 @@ pub fn render(s: &Snapshot, workout: Option<&WorkoutStatus>) {
     let avg = fmt(s.power_avg_w(), |v| format!("{v:4}"));
 
     // Prefer the dedicated HR strap, fall back to HR reported by the trainer.
-    let hr = s.heart_rate.or(bike.and_then(|b| b.heart_rate_bpm.map(u16::from)));
+    let hr = s
+        .heart_rate
+        .or(bike.and_then(|b| b.heart_rate_bpm.map(u16::from)));
     let hr = fmt(hr, |v| format!("{v:3}"));
 
-    let mut line = format!("🚴 {speed} km/h │ {cadence} rpm │ {power} W ({avg} avg) {bar} │ ❤  {hr} bpm");
+    let mut line =
+        format!("🚴 {speed} km/h │ {cadence} rpm │ {power} W ({avg} avg) {bar} │ ❤  {hr} bpm");
 
     if let Some(d) = bike.and_then(|b| b.distance_m) {
         line.push_str(&format!(" │ {:.2} km", d as f32 / 1000.0));
@@ -59,5 +62,9 @@ fn fmt<T>(v: Option<T>, f: impl Fn(T) -> String) -> String {
 fn power_bar(watts: i16) -> String {
     let frac = (watts.max(0) as f32 / POWER_BAR_MAX_W).min(1.0);
     let filled = (frac * POWER_BAR_WIDTH as f32).round() as usize;
-    format!("[{}{}]", "█".repeat(filled), "░".repeat(POWER_BAR_WIDTH - filled))
+    format!(
+        "[{}{}]",
+        "█".repeat(filled),
+        "░".repeat(POWER_BAR_WIDTH - filled)
+    )
 }

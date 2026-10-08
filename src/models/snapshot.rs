@@ -40,4 +40,9 @@ impl Snapshot {
             Reading::HeartRate(h) => self.heart_rate = Some(h),
         }
     }
+
+    /// Speed from the 3 s average power, so it doesn't jitter.
+    pub fn virtual_speed_kmh(&self) -> Option<f32> {
+        self.power_avg_w().map(|w| super::speed::speed_kmh(w as f64) as f32)
+    }
 }
