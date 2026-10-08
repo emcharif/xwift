@@ -1,0 +1,9 @@
+use uuid::Uuid;
+
+// Services
+pub const FTMS_SERVICE: Uuid = Uuid::from_u128(0x00001826_0000_1000_8000_00805F9B34FB);
+pub const HR_SERVICE: Uuid = Uuid::from_u128(0x0000180D_0000_1000_8000_00805F9B34FB);
+
+// Characteristics
+pub const INDOOR_BIKE_DATA: Uuid = Uuid::from_u128(0x00002AD2_0000_1000_8000_00805F9B34FB);
+pub const HR_MEASUREMENT: Uuid = Uuid::from_u128(0x00002A37_0000_1000_8000_00805F9B34FB);
