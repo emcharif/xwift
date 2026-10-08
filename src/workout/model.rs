@@ -18,35 +18,62 @@ pub enum Block {
     Ramp { duration_s: u32, from_watts: i16, to_watts: i16 },
     Repeat { times: u32, blocks: Vec<Block> },
 }
+#[derive(Debug, Clone)]
+pub struct Step {
+    pub watts: i16,
+    pub segment: usize,
+    pub segment_total: usize,
+    pub segment_remaining_s: u32,
+    pub label: String,
+}
 
 impl Workout {
-    /// One target wattage per second of the workout.
-    pub fn plan(&self) -> Vec<i16> {
+    /// One step per second of the workout.
+    pub fn plan(&self) -> Vec<Step> {
         let mut out = Vec::new();
-        expand(&self.blocks, &mut out);
+        let mut seg = 0;
+        expand(&self.blocks, "", &mut seg, &mut out);
+        for s in &mut out {
+            s.segment_total = seg;
+        }
         out
     }
 }
 
-fn expand(blocks: &[Block], out: &mut Vec<i16>) {
+fn expand(blocks: &[Block], prefix: &str, seg: &mut usize, out: &mut Vec<Step>) {
     for b in blocks {
         match b {
             Block::Steady { duration_s, watts } => {
-                out.extend(std::iter::repeat(*watts).take(*duration_s as usize));
+                *seg += 1;
+                push_segment(out, *seg, format!("{prefix}Steady {watts} W"), *duration_s, |_| *watts);
             }
             Block::Ramp { duration_s, from_watts, to_watts } => {
-                for s in 0..*duration_s {
+                *seg += 1;
+                let label = format!("{prefix}Ramp {from_watts} -> {to_watts} W");
+                push_segment(out, *seg, label, *duration_s, |s| {
                     let t = s as f32 / *duration_s as f32;
-                    let w = *from_watts as f32 + (*to_watts - *from_watts) as f32 * t;
-                    out.push(w.round() as i16);
-                }
+                    (*from_watts as f32 + (*to_watts - *from_watts) as f32 * t).round() as i16
+                });
             }
             Block::Repeat { times, blocks } => {
-                for _ in 0..*times {
-                    expand(blocks, out);
+                for n in 1..=*times {
+                    let p = format!("{prefix}Rep {n}/{times}: ");
+                    expand(blocks, &p, seg, out);
                 }
             }
         }
+    }
+}
+
+fn push_segment(out: &mut Vec<Step>, seg: usize, label: String, duration_s: u32, watts_at: impl Fn(u32) -> i16) {
+    for s in 0..duration_s {
+        out.push(Step {
+            watts: watts_at(s),
+            segment: seg,
+            segment_total: 0, // filled in by plan()
+            segment_remaining_s: duration_s - s,
+            label: label.clone(),
+        });
     }
 }
 
