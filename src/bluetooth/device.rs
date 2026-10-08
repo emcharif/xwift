@@ -1,3 +1,4 @@
+//device.rs
 use btleplug::platform::Peripheral;
 
 #[derive(Debug, Clone, Copy, PartialEq)]

@@ -1,8 +1,10 @@
+// cli.rs
 use std::io::{self, Write};
 
 use anyhow::{Context, Result};
 
 use crate::bluetooth::device::{DeviceKind, FoundDevice};
+use crate::workout::model::Workout;
 
 pub fn print_devices(found: &[FoundDevice]) {
     println!("\nFound devices:");
@@ -41,5 +43,23 @@ fn prompt_index(found: &[FoundDevice], kind: DeviceKind, label: &str) -> Result<
     }
     let i: usize = line.parse().context("not a number")?;
     anyhow::ensure!(found.get(i).map(|d| d.kind) == Some(kind), "that index is not a {label}");
+    Ok(Some(i))
+}
+
+pub fn choose_workout(workouts: &[Workout]) -> Result<Option<usize>> {
+    println!("\nWorkouts:");
+    for (i, w) in workouts.iter().enumerate() {
+        println!("  [{}] {} ({} min)", i, w.name, w.plan().len() / 60);
+    }
+    print!("Index of workout (enter to skip): ");
+    io::stdout().flush()?;
+    let mut line = String::new();
+    io::stdin().read_line(&mut line)?;
+    let line = line.trim();
+    if line.is_empty() {
+        return Ok(None);
+    }
+    let i: usize = line.parse().context("not a number")?;
+    anyhow::ensure!(i < workouts.len(), "no such workout");
     Ok(Some(i))
 }

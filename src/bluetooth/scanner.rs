@@ -1,3 +1,4 @@
+// scanner.rs
 use std::time::Duration;
 
 use anyhow::{Context, Result};

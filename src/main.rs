@@ -3,6 +3,7 @@ mod cli;
 mod config;
 mod models;
 mod services;
+mod workout;
 
 use std::time::Duration;
 
@@ -27,5 +28,12 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
-    services::data_collector::run(chosen).await
+    let workout = if chosen.iter().any(|d| d.kind == bluetooth::device::DeviceKind::Trainer) {
+    let workouts = workout::model::load_all()?;
+    cli::choose_workout(&workouts)?.and_then(|i| workouts.into_iter().nth(i))
+    } else {
+        None // no trainer selected, nothing to control
+    };
+
+    services::data_collector::run(chosen, workout).await
 }
