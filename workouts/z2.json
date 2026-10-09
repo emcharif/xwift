@@ -1,0 +1,6 @@
+{
+  "name": "Z2",
+  "blocks": [
+    { "type": "steady", "duration_s": 4500, "watts": 120 }
+  ]
+}

@@ -1,8 +1,0 @@
-{
-  "name": "Test (5 min)",
-  "blocks": [
-    { "type": "steady", "duration_s": 60, "watts": 80 },
-    { "type": "steady", "duration_s": 60, "watts": 100 },
-    { "type": "ramp", "duration_s": 60, "from_watts": 100, "to_watts": 70 }
-  ]
-}
