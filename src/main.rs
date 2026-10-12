@@ -1,9 +1,4 @@
-mod bluetooth;
-mod cli;
-mod config;
-mod models;
-mod services;
-mod workout;
+use xwift::{workout, bluetooth, cli, config, services};
 
 use std::time::Duration;
 
