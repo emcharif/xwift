@@ -1,5 +1,6 @@
 use anyhow::Result;
 use tokio::sync::{mpsc, watch};
+use std::future::Future;
 
 use super::export::{self, Sample};
 use super::pretty_print;
@@ -13,9 +14,30 @@ use crate::workout::runner::{self, WorkoutStatus};
 use chrono::Utc;
 use std::time::Duration;
 
+pub async fn run(devices: Vec<FoundDevice>, workout: Option<Workout>) -> Result<()> {
+    run_with(
+        devices,
+        workout,
+        |snap, status| pretty_print::render(snap, status),
+        async {
+            let _ = tokio::signal::ctrl_c().await;
+        },
+    )
+    .await
+}
 /// Start one streaming task per device, fold their readings into a Snapshot,
 /// and redraw after every update. Returns when all devices disconnect.
-pub async fn run(devices: Vec<FoundDevice>, mut workout: Option<Workout>) -> Result<()> {
+pub async fn run_with<F, S>(
+    devices: Vec<FoundDevice>,
+    mut workout: Option<Workout>,
+    mut on_update: F,
+    stop: S,
+) -> Result<()>
+where
+    F: FnMut(&Snapshot, Option<&WorkoutStatus>) + Send,
+    S: Future<Output = ()> + Send,
+{
+    tokio::pin!(stop);
     let (tx, mut rx) = mpsc::channel(64);
     let mut pending: Option<(Workout, mpsc::Sender<TrainerCommand>)> = None;
     let (status_tx, status_rx) = watch::channel::<Option<WorkoutStatus>>(None);
